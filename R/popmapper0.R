@@ -1099,7 +1099,7 @@ lines(edges,nths2,col="black");
         for(k in 2:20){
             cat("\n\n plot_power for ",k, "ampsm:",ampsm_ob[k]);
             maxp=1.0;
-            popm=plot_power(pcoa,rec,ampsm_ob[k]);
+            popm=plot_power(pcoa,rec,ampsm_ob[k],param=param);
             maxpb=popm$maxp;
             
             if(!is.na(maxpb))maxp=maxpb;
@@ -1137,7 +1137,7 @@ lines(edges,nths2,col="black");
             if((nths_sm_ob[k]>param$group_max)||(k==length(nths_sm_ob))){
                 if(count_sig>0){
                 opid=max(which(pvs<param$edge_p_value));
-                popm=plot_power(pcoa,rec,ampsm_ob[opid]);
+                popm=plot_power(pcoa,rec,ampsm_ob[opid],param=param);
                 ##maxpb=popm$maxpb;
                 print("Maximum identified subpopulations:");
                 nth=opid;
@@ -1158,7 +1158,7 @@ lines(edges,nths2,col="black");
     }
 }else{
     ampsm=ampsm_ob[which(nths_sm_ob==param$nth_show)];
-    popm=plot_power(pcoa,rec,ampsm);
+    popm=plot_power(pcoa,rec,ampsm,param=param);
     print("Identified subpopulations:");
     print(nth);
     dev.set(3);
