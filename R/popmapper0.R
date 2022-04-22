@@ -693,7 +693,7 @@ cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
             dij=abs(mean(pi)-mean(pj));
             ##sdw=(length(pi)*sdi+length(pj)*sdj)/(length(lis));
             sdw=sqrt((sqm(pi)+sqm(pj))/(length(lis)-2));
-            sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
+            if(flag_welch_t_test==1)sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
             
             ##distcm[i,j]=dij/(0.5*(sdi+sdj));
             distcm[i,j]=dij/sdw;
@@ -714,14 +714,14 @@ cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
                     sdj=sd(pj);
                     dij=abs(mean(pi)-mean(pj));
                     sdw=sqrt((sqm(pi)+sqm(pj))/(length(lis)-2));
-                    sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
+                    if(flag_welch_t_test==1)sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
                     if(flag_welch_t_test==1)sdw=sdw1;
                     indes[k]=dij/sdw;
                 }
                 p_value=(sum(indes>inde0)+sum(indes==inde0)*0.5)/nperm;
                 if(!is.na(p_value)){
                      pvs[i,j]=p_value;
-                    pvs[j,i]=p_value;
+                     pvs[j,i]=p_value;
                 }
             }
             
