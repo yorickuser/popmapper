@@ -1247,9 +1247,9 @@ lines(edges,ngroups2,col="black");
     
 }
 
-##' @title popmapper". 
+##' @title popmap.out". 
 #' @export
-out_result <- function(ofile,amp_euc,amp_bin,omit_popid){
+popmap.out <- function(ofile,amp_euc,amp_bin,omit_popid){
     if(length(omit_popid)>0){
         ofi=sprintf("%s_euc%d_bin%d_omit%s_",ofile,amp_euc,amp_bin,paste0(omit_popid,collapse="-"));
     }else{
