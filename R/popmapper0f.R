@@ -35,7 +35,7 @@ param0=list(
     flag_perm=1, ## 1 or -1 (flip former and latter)
     nperm=2000,
     edge2ampsm=10.0,
-    nth_show=-1, ## -1: optimize
+    ngroup_show=-1, ## -1: optimize
     edge_p_value=0.001,
     flag_fix_lim=0,
     kdis0=2,
@@ -50,24 +50,29 @@ param0=list(
     runseed=3571,
     flag_runid=1,
     flag_binary=2, ## 0 euclid, 1 my binary, 2 hybrid, 3 binary by R function
-    nsamp=200
+    nsamp=200,
+    win_width=c(5,5,5,5),
+    win_height=c(4,4,4,4)
     );
 
 
-##wsize_w=6;
-##wsize_h=5;
-wsize_w=5;
-wsize_h=4;
+##win_width=6;
+##win_height=5;
+##win_width=5;
+##win_height=4;
 
 ##' @title xinit". 
 #' @export
-xinit <- function(){
+xinit <- function(win_width=param0$win_width,win_height=param0$win_height){
+##    win_width=param$win_width;
+ ##   win_height=param$win_height;
+    
     graphics.off();
     
-    X11(width=wsize_w,height=wsize_h);
-    X11(width=wsize_w-1,height=wsize_h);
-    X11(width=wsize_w,height=wsize_h);
-    X11(width=wsize_w,height=wsize_h);
+    X11(width=win_width[1],height=win_height[1]);
+    X11(width=win_width[2],height=win_height[2]);
+    X11(width=win_width[3],height=win_height[3]);
+    X11(width=win_width[4],height=win_height[4]);
 }
 
 fn <- function(x,y,mx,my,sx,sy){
@@ -112,7 +117,7 @@ find_peak <- function(pcoa,ampsm,ndiv=100){
     peak=t(which(maskp>0,arr.ind=TRUE));
     peakx=xx[lisp];
     peaky=yy[lisp];
-    return(list(peak=peak,peakx=peakx,peaky=peaky,lisp=lisp,nth=length(lisp),xx0=xx0,yy0=yy0,xx=xx,yy=yy,zz=zz,sx=sx,sy=sy));
+    return(list(peak=peak,peakx=peakx,peaky=peaky,lisp=lisp,ngroup=length(lisp),xx0=xx0,yy0=yy0,xx=xx,yy=yy,zz=zz,sx=sx,sy=sy));
 }
 
 
@@ -209,7 +214,7 @@ sum_ind_wise <- function(dist0,idsu){
 
 
   
-read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_location, runnames=runnames,omit_popid=omit_popid,amp_euc=1,amp_bin=0,param=param0){
+read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_location,omit_popid=omit_popid,amp_euc=1,amp_bin=0,param=param0){
     .ee.append("read_data",environment());
     
     print("reading file...");    
@@ -224,25 +229,39 @@ read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_locatio
     inds=df[,1];
     inds=as.character(inds[-1]);
     sample_name=inds;
-
-
-    runnames1=paste0(runnames,"S");
-    runid_names=paste0("S",seq(length(runnames)));
-
-    for(k in 1:length(runnames1))inds=(gsub(runnames1[k],runid_names[k],inds));
-    ids=as.integer(gsub("S","",inds));
-
-    ##if(flag_single_run==1)ids=ids+1000;
-    if(max(ids)<1000)ids=ids+1000;
     
     if(param$flag_read_sample_location==1){
         sampleinfo=read.table(file_sample_location,header=TRUE,sep="\t");
         popids=sampleinfo$PopID;
         runids=sampleinfo$RunID;
-        popnames=sampleinfo$PopName;
-        ids1=as.integer(gsub("S","",sampleinfo$FileName))+as.integer(sampleinfo$RunID)*1000;
-        FileName2=paste0(runnames[sampleinfo$RunID],sampleinfo$FileName);
-        sampleinfo=data.frame(FileName2=FileName2,sampleinfo);
+        runlabels=as.character(sampleinfo$RunLabel);
+        popnames=as.character(sampleinfo$PopName);
+        
+        ids1=as.integer(gsub("S","",sampleinfo$SampleName))+as.integer(sampleinfo$RunID)*1000;
+
+        runid=unique(runids);
+        rids=NULL;
+        for(i in 1:length(runid)){
+            rids=c(rids,(which(runids==runid[i]))[1]);
+        }
+        
+        runlabel=runlabels[rids];
+        runnames=runlabel;
+        
+        runnames1=paste0(runnames,"S");
+        ##runid_names=paste0("S",seq(length(runnames)));
+        runid_names=paste0("S",runid);
+        
+        for(k in 1:length(runnames1))inds=(gsub(runnames1[k],runid_names[k],inds));
+        ids=as.integer(gsub("S","",inds));
+        
+        ##if(flag_single_run==1)ids=ids+1000;
+        if(max(ids)<1000)ids=ids+1000;
+        
+        
+        ##SampleName2=paste0(runnames[sampleinfo$RunID],sampleinfo$SampleName);
+        SampleName2=paste0(sampleinfo$RunLabel,sampleinfo$SampleName);
+        sampleinfo=data.frame(SampleName2=SampleName2,sampleinfo);
         
     }else{
         ids1=unique(ids);
@@ -322,17 +341,18 @@ read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_locatio
         tab1=tab00[,(nst+1):ncol(tab1)];                
     }
 
-    return(list(tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,sample.name=sample_name,sample.info=sampleinfo));
+    return(list(tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,runnames=runnames,runids=runids,runid=runid,sample.name=sample_name,sample.info=sampleinfo));
 }
 
 
-##' @title calc_distance". 
+##' @title popmap.readdata". 
 #' @export
-calc_distance <- function(file_tsv=NULL,file_sample_location=NULL, runnames=NULL,omit_popid=NULL,amp_euc=1,amp_bin=0,param=param0){
-
+popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=NULL,amp_euc=1,amp_bin=0,param=param0){
+    .ee.append("popmap.readdata",environment());
+    
     set.seed(param$runseed);
     
-    re_read_data=read_data(file_tsv=file_tsv,file_sample_location=file_sample_location, runnames=runnames,omit_popid=omit_popid,amp_euc=amp_euc,amp_bin=amp_bin,param=param0);
+    re_read_data=read_data(file_tsv=file_tsv,file_sample_location=file_sample_location, omit_popid=omit_popid,amp_euc=amp_euc,amp_bin=amp_bin,param=param0);
 
         tab00=re_read_data$tab00;
         tab1=re_read_data$tab1;
@@ -340,10 +360,14 @@ calc_distance <- function(file_tsv=NULL,file_sample_location=NULL, runnames=NULL
         ids=re_read_data$ids;
         popids1=re_read_data$popids1;
         popids=re_read_data$popids;
-        popnames=re_read_data$popnames;
-        
-        sample.name=re_read_data$sample.name;
-        runids1=re_read_data$runids1;
+    popnames=re_read_data$popnames;
+    runnames=re_read_data$runnames;
+    runid=re_read_data$runid;
+
+
+    
+    sample.name=re_read_data$sample.name;
+    runids1=re_read_data$runids1;
         ##rm(re_read_data);
         
         
@@ -375,13 +399,15 @@ calc_distance <- function(file_tsv=NULL,file_sample_location=NULL, runnames=NULL
             }
         }
 
-        
-        
-        nrun=as.integer(max(ids2)/1000);
-        masks=matrix(ids2 > -1, nrow=nrun, ncol=length(ids2), byrow=T);
-        for(i in 1:nrun)masks[i,]=(i*1000<=ids2)+(ids2<(i+1)*1000)==2;
-        mask=colSums(masks)>0;
 
+    ##nrun=as.integer(max(ids2)/1000);
+    nrun=max(runid);
+    masks=matrix(ids2 > -1, nrow=nrun, ncol=length(ids2), byrow=T);
+    for(i in 1:nrun)masks[i,]=(i*1000<=ids2)+(ids2<(i+1)*1000)==2;
+    mask=colSums(masks)>0;
+
+    
+    
         popid_u=unique(popids);
         popname_u=rep("",length(popid_u));
         for(i in 1:length(popid_u))popname_u[i]=popnames[(which(popids==popid_u[i]))[1]];
@@ -395,7 +421,7 @@ calc_distance <- function(file_tsv=NULL,file_sample_location=NULL, runnames=NULL
         }
 
         
-        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, sample.info=re_read_data$sample.info));   
+        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info));   
 }
 
 get_pcoa2d <- function(dist2,nsamp,ampst=0.8,amped=1.2){
@@ -422,7 +448,7 @@ get_pcoa2d <- function(dist2,nsamp,ampst=0.8,amped=1.2){
 ##########################################################
 cerwave <- function(i,edge){
     if((gidbuf[i]==0)){
-        gidbuf[i] <<- nthbuf;
+        gidbuf[i] <<- ngroupbuf;
         lis=which(distbuf[i,] < edge);
  
         if(length(lis)>0){
@@ -433,20 +459,20 @@ cerwave <- function(i,edge){
 
 
 gidbuf <<- 0;
-nthbuf <<- 1;
+ngroupbuf <<- 1;
 distbuf <<- 0.0;
 do_cerwave <- function(dis2,edge){
     distbuf <<- dis2;
     gidbuf <<- rep(0,nrow(distbuf));
-    nthbuf <<- 1;      
+    ngroupbuf <<- 1;      
     for(i in 1:length(gidbuf)){
         if(gidbuf[i]==0){     
             cerwave(i,edge);
-            nthbuf <<- nthbuf+1;
+            ngroupbuf <<- ngroupbuf+1;
         }        
     }    
-    nthbuf <<- nthbuf-1;    
-    return(list(nth=nthbuf,gid=gidbuf));
+    ngroupbuf <<- ngroupbuf-1;    
+    return(list(ngroup=ngroupbuf,gid=gidbuf));
 }
 
 
@@ -472,33 +498,33 @@ calc_groups <- function(dist2,edges,param=param0){
     
     
     print("cerwave..");
-    nths2=rep(0,length(edges));    
+    ngroups2=rep(0,length(edges));    
     for(i in 1:length(edges)){
         edge = edges[i];
         re_cerwave=do_cerwave(dis2,edge);
-        nth=re_cerwave$nth;
+        ngroup=re_cerwave$ngroup;
         gid=re_cerwave$gid;
-        nths2[i]=nth;
+        ngroups2[i]=ngroup;
     }
     
     print("done");
-    return(nths2);
+    return(ngroups2);
 }
 
 calc_groups_sm <- function(dist2,edges,edge2ampsm,ndiv=100){
     res= cmdscale(dist2, k = 2,eig=TRUE);
-    nths_sm=rep(0,length(edges));    
+    ngroups_sm=rep(0,length(edges));    
     for(i in 1:length(edges)){
-        nths_sm[i]=(find_peak(res,edges[i]*edge2ampsm,ndiv=ndiv))$nth;
+        ngroups_sm[i]=(find_peak(res,edges[i]*edge2ampsm,ndiv=ndiv))$ngroup;
     }
     print("done");
     
-    nths_sm_ob=sort(unique(nths_sm));
-    ampsm_ob=nths_sm_ob*0.0;
-    for(i in 1:length(nths_sm_ob)){
-        ampsm_ob[i]=edge2ampsm*mean(edges[nths_sm==nths_sm_ob[i]]);
+    ngroups_sm_ob=sort(unique(ngroups_sm));
+    ampsm_ob=ngroups_sm_ob*0.0;
+    for(i in 1:length(ngroups_sm_ob)){
+        ampsm_ob[i]=edge2ampsm*mean(edges[ngroups_sm==ngroups_sm_ob[i]]);
     }
-    return(list(nths_sm=nths_sm,nths_sm_ob=nths_sm_ob,ampsm_ob=ampsm_ob));
+    return(list(ngroups_sm=ngroups_sm,ngroups_sm_ob=ngroups_sm_ob,ampsm_ob=ampsm_ob));
 }
 
 
@@ -566,10 +592,10 @@ map_power <- function(pcoa,rec,ampsm_opt,ndiv=100){
     
     print(peak);
 
-    nth = length(lispeak);
-    print(nth);
+    ngroup = length(lispeak);
+    print(ngroup);
 
-    ccer <<- array(rep(as.integer(px)*0,nth),dim=c(ndiv,ndiv,nth));
+    ccer <<- array(rep(as.integer(px)*0,ngroup),dim=c(ndiv,ndiv,ngroup));
 
     for(k in 1:(length(lispeak))){
              ccerwave(peak[1,k],peak[2,k],k);
@@ -606,8 +632,8 @@ map_power <- function(pcoa,rec,ampsm_opt,ndiv=100){
         }
     }
     
-    cmask = array(rep(0,length(px)*nth),dim=c(length(px),nth));
-    for(k in 1:nth){
+    cmask = array(rep(0,length(px)*ngroup),dim=c(length(px),ngroup));
+    for(k in 1:ngroup){
         cmask[,k] = interp2(yy0,xx0,ccer1[,,k],py,px);
     }
     cid_sm = rep(0,length(px));
@@ -618,20 +644,20 @@ map_power <- function(pcoa,rec,ampsm_opt,ndiv=100){
 ##    print("AAA");
 
   ##  print(lispeak);
-    return(list(cid_sm=cid_sm,peakx=peakx,peaky=peaky,xx0=xx0,yy0=yy0,xx=xx,yy=yy,zz=zz,sx=sx,sy=sy,ccer0=ccer0,ccer1=ccer1));
+    return(list(cid_sm=cid_sm,peakx=peakx,peaky=peaky,xx0=xx0,yy0=yy0,xx=xx,yy=yy,zz=zz,sx=sx,sy=sy,ccer0=ccer0,ccer1=ccer1,ndiv=ndiv));
 }
 
 
 pfunc <- function(px,py,xx0,yy0,peakx,peaky,ccer0,ccer1,cid_sm,labels,lev=0.95,pals= NULL,flag_map=1){
-    nth=max(cid_sm);
-    if(length(pals)==0)pals=rainbow(nth,v=1.0);
+    ngroup=max(cid_sm);
+    if(length(pals)==0)pals=rainbow(ngroup,v=1.0);
     
     if(flag_map==0){
         text(x=px,y=py,col=pals[cid_sm],labels=labels,cex=0.7,font=1)
     }else{
         
         
-        for(ii in 1:nth){
+        for(ii in 1:ngroup){
             ##        points(xx[which(ccer1[,,ii]>0)],yy[which(ccer1[,,ii]>0)],col=pals[ii],pch=20,cex=0.7);
             contour(xx0,yy0,ccer1[,,ii],add=TRUE,drawlabels=FALSE,method="simple",col=pals[ii],levels=c(lev),labels=NULL,lwd=2,lty=1)
             contour(xx0,yy0,ccer0[,,ii],add=TRUE,drawlabels=FALSE,method="simple",col=pals[ii],levels=c(lev),labels=NULL,lwd=1,lty=2)   
@@ -656,7 +682,7 @@ calc_inde <- function(pxp,pyp){
     vara=sqm(pxp)+sqm(pyp);
     varw=0.0;
     varb=0.0;
-    for(k in 1:nth){
+    for(k in 1:ngroup){
         px1=pxp[which(cid_sm==k)];
         py1=pyp[which(cid_sm==k)];
         varw= varw+ sqm(px1)+sqm(py1);
@@ -665,22 +691,22 @@ calc_inde <- function(pxp,pyp){
        ## varb=varb+length(px1)*((mean(px1)-mean(pxp))^2);
     }
 
-##    vb=varb/(nth-1);
-    vw=varw/(length(pxp)-nth);
-    vb=varb/(length(pxp)-nth);
+##    vb=varb/(ngroup-1);
+    vw=varw/(length(pxp)-ngroup);
+    vb=varb/(length(pxp)-ngroup);
     inde=(vb/vw);
     ##inde=(varb/varw);
     ##inde=(varb/vara);
-    return(list(inde=inde,vb=(varb/(length(pxp))),va=vara,vw=(varw/(length(pxp)-nth))));
+    return(list(inde=inde,vb=(varb/(length(pxp))),va=vara,vw=(varw/(length(pxp)-ngroup))));
 }
 
 cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
     
-    nth=max(cid_sm);
-    distcm=matrix(rep(0.0,nth*nth),nrow=nth,ncol=nth);
+    ngroup=max(cid_sm);
+    distcm=matrix(rep(0.0,ngroup*ngroup),nrow=ngroup,ncol=ngroup);
     pvs=distcm;
-    for(i in 1:(nth-1)){
-        for(j in (i+1):nth){
+    for(i in 1:(ngroup-1)){
+        for(j in (i+1):ngroup){
             lis=which((cid_sm==i)+(cid_sm==j)>0);
             dist2pp=dist2p[lis,lis];
             cid=cid_sm[lis];
@@ -735,10 +761,35 @@ cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
     return(list(distcm=distcm,pvs=pvs));
 }
 
+##' @title popmap.plot". 
+#' @export
+popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
+    .ee.append("popmap.plot",environment());
+    cid_sm=popmap$cid_sm;
+    if(perm==1){
+        pcoap=popmap$pcoap;
+        powermap=popmap$powermap;
+
+        if(length(resp)==0)resp=find_peak(pcoap,popmap$ampsm,ndiv=powermap$ndiv);
 
 
+        if(length(main)==0)main=sprintf("ngroups: %d    max p-value: %f    sd: %2.3f",popmap$ngroup,popmap$maxp, popmap$ampsm);
+
+        plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=popmap$pals,ccer0=powermap$cerr0,ccer1=powermap$ccer1,labels=paste(cid_sm),main=main,flag_map=0,param=param);
+
+        
+    }else{
+        pcoa=popmap$pcoa;
+        powermap=popmap$powermap;
+        if(length(main)==0)main=sprintf("ngroups: %d   max p-value: %f    sd: %2.3f",popmap$ngroup,popmap$maxp,popmap$ampsm)
+        plot_power_map(pcoa,powermap,cid_sm,flag_fix_lim=0,pals=popmap$pals,ccer0=powermap$ccer0,ccer1=powermap$ccer1,labels=popmap$popids2,flag_map=1,main=main,param=param);
+
+
+    }
+}
 
 plot_power_map <- function(pcoa,res,cid_sm,flag_fix_lim=0,pals=NULL,ccer0=NULL,ccer1=NULL,labels=NULL,flag_map=1,main=NULL,param=param0){
+    .ee.append("plot_power_map",environment());
     xx0=res$xx0;
     yy0=res$yy0;
     xx=res$xx;
@@ -746,21 +797,22 @@ plot_power_map <- function(pcoa,res,cid_sm,flag_fix_lim=0,pals=NULL,ccer0=NULL,c
     zz=res$zz;
     sx=res$sx;
     sy=res$sy;
+
     
-    nth = max(cid_sm);
+    ngroup = max(cid_sm);
     peakx = res$peakx;
     peaky = res$peaky;
     
     px=pcoa$points[,1];
     py=pcoa$points[,2];
-    pals = rainbow(nth,v=1.0);
+    if(length(pals)==0)pals = rainbow(ngroup,v=1.0);
 
         
     par(mar=c(5,5,5,6));
     par(xpd=T);
     dev.hold();
     
-    if(length(pals)==0)pals = rainbow(nth,v=1.0);
+    if(length(pals)==0)pals = rainbow(ngroup,v=1.0);
     
     
     nlev=20;
@@ -797,14 +849,19 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
     
     res=map_power(pcoa,rec,ampsm_opt,ndiv=param$ndiv);
     cid_sm = res$cid_sm;
-    nth = max(cid_sm);
+    ngroup = max(cid_sm);
 
 
     dev.set(4);
 
-    main=sprintf("sd: %2.3f     groups: %d",ampsm_opt,nth);
-    
-    plot_power_map(pcoa,res,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=pals,ccer0=res$ccer0,ccer1=res$ccer1,labels=popids2,flag_map=1,main=main,param=param);
+    main=sprintf("sd: %2.3f     groups: %d",ampsm_opt,ngroup);
+
+    pals = rainbow(ngroup,v=1.0);
+
+
+        
+        plot_power_map(pcoa,res,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=pals,ccer0=res$ccer0,ccer1=res$ccer1,labels=popids2,flag_map=1,main=main,param=param);
+
 
         
     dev.set(5);
@@ -875,9 +932,9 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
         }
         
         if(0){
-            for(i in 1:nth){
+            for(i in 1:ngroup){
                 cat(i,":\n ");
-                for(j in 1:nth){
+                for(j in 1:ngroup){
                     if(i!=j){
                         cat(sprintf("%d %2.2f ",j,distcm[i,j]));
                     }
@@ -894,7 +951,7 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
           maxp=max(recm$pvs);
       }
     
-    return(list(nth=nth,maxp=maxp,cidsm=cid_sm,popids2=popids2,recm=recm,recm0=recm0));
+    return(list(ngroup=ngroup,maxp=maxp,cid_sm=cid_sm,popids2=popids2,recm=recm,recm0=recm0,powermap=res,pcoa=pcoa,pcoap=pcoap,ampsm=ampsm_opt,pals=pals));
 }
 
 
@@ -925,10 +982,12 @@ pngout<-function(dev_id=as.numeric(dev.list()[length(dev.list())]),plotfile="tes
     
 }
 
+##' @title popmap.plotdata". 
+#' @export
+popmap.plotdata <- function(pcoa,rec,param=param0,sample_group_name="samples"){
+   .ee.append("popmap.plotdata",environment());
 
-plot_func0 <- function(pcoa,rec,param=param0,sample_group="samples"){
-
-    
+   runnames=rec$runnames;
     masks=rec$masks;
     mask=rec$mask;
     nrun=rec$nrun;
@@ -936,7 +995,8 @@ plot_func0 <- function(pcoa,rec,param=param0,sample_group="samples"){
     popids2=rec$popids2;
     popids=rec$popids;
     runids1=rec$runids1;    
-    
+   runid=rec$runid;
+   
     n_eu=rec$neu;
     nn=nrow(rec$tab1);
     nc=ncol(rec$tab1);
@@ -951,7 +1011,10 @@ plot_func0 <- function(pcoa,rec,param=param0,sample_group="samples"){
 
     p1=pcoa$p1;
     p2=pcoa$p2;
-    
+
+   rmask=(rowSums(masks)>0);
+
+   
 xlim0=1.2*dx*c(-1,1);
 ylim0=1.2*dy*c(-1,1);
 xlim0=xlim0+gx;
@@ -967,11 +1030,12 @@ ylim0=ylim0+gy;
         edge_nullt=param$edge_null;
     }
     
-    if(param$flag_binary==0)main_name=paste(sample_group,"(euclid-distance)",", null edge:",edge_nullt,", loci:",nc,tmar);
-if(param$flag_binary==1)main_name=paste(sample_group,"(my-binary-distance)",", null edge:",edge_nullt,", loci:",nc,tmar);
-##if(flag_binary==2)main_name=paste(sample_group,"(hybrid-distance)",", null edge:",edge_null,", loci:",nc);
-if(param$flag_binary==2)main_name=paste(sample_group,"(hybrid-distance)",", null edge:",edge_nullt,", loci:",nc,"\n amp_euclid:",amp_euc,", amp_binary:",amp_bin,", mean non-NULL pairs:", as.integer(mean(n_eu)),tmar);
-if(param$flag_binary==3)main_name=paste(sample_group,"(R-binary-distance)",", null edge:",edge_nullt,", loci:",nc,tmar);
+    if(param$flag_binary==0)main_name=paste(sample_group_name,"(euclid-distance)",", null edge:",edge_nullt,", loci:",nc,tmar);
+if(param$flag_binary==1)main_name=paste(sample_group_name,"(my-binary-distance)",", null edge:",edge_nullt,", loci:",nc,tmar);
+
+   ##if(param$flag_binary==2)main_name=paste(sample_group_name,"(hybrid-distance)",", null edge:",edge_nullt,", loci:",nc,"\n amp_euc:",amp_euc,", amp_bin:",amp_bin,", mean non-NULL pairs:", as.integer(mean(n_eu)),tmar);
+   if(param$flag_binary==2)main_name=paste(sample_group_name," , loci:",nc,"\n amp_euc:",amp_euc,", amp_bin:",amp_bin,", mean non-NULL pairs:", as.integer(mean(n_eu)),tmar);
+if(param$flag_binary==3)main_name=paste(sample_group_name,"(R-binary-distance)",", null edge:",edge_nullt,", loci:",nc,tmar);
 
  ## 0 euclid, 1 my binary, 2 hybrid, 3 binary by R function
 
@@ -980,7 +1044,7 @@ par(xpd=T);
 if(param$flag_runid==1){
     plot.new();    
     ##plot(pcoa,type="n",main=paste0(main_name,"\n run_id: color,   population_id: number"));
-    plot(pcoa$points,type="n",main=paste0(main_name),xlab="Axis 1",ylab="Axis 2",xlim=xlim0,ylim=ylim0);
+    plot(pcoa$points,type="n",main=paste0(main_name),xlab="Axis 1",ylab="Axis 2",xlim=xlim0,ylim=ylim0,cex.main=0.8);
 ##m12: 3,10,21,20,9,5,11,1,13,8
 ##m13: 22,13,7,12,19,4,6,5,9,14,10,
 ##m14: 1,3,4,5,6,7,8,9,10,11,12,13,14,18,20,21,22
@@ -989,16 +1053,19 @@ if(param$flag_runid==1){
 ##pal=rev(rainbow(6,end=0.7));
 
     if(param$flag_cols_cerwave==1){
-        ##        pal=rev(rainbow(nth,end=0.7));
-        pal=rev(rainbow(nth,end=0.7,v=0.8));
+        ##        pal=rev(rainbow(ngroup,end=0.7));
+        pal=rev(rainbow(ngroup,end=0.7,v=0.8));
         cols=pal[gid];
         
     }else{
         ##        pal=rev(rainbow(nrun,end=0.7));
-        pal=rev(rainbow(nrun,end=0.7,v=0.8));
+        ##        pal=rev(rainbow(nrun,end=0.7,v=0.8));
+        runid=rec$runid;
+        pal=rev(rainbow(length(runid),end=0.7,v=0.8));
         cols=rep("blue",nn);
         
-        for(i in 1:nrun)cols[masks[i,]]=pal[i];
+        ##for(i in 1:nrun)cols[masks[i,]]=pal[i];
+        for(i in 1:length(runid))cols[masks[runid[i],]]=pal[i];
     }
     
     
@@ -1009,8 +1076,12 @@ if(param$flag_runid==1){
 
     run_name="run";
     if(param$flag_cols_cerwave==1)run_name="group";
+
+
     
-legend(param$legend_side, legend = paste(run_name,seq(length(pal))), col = pal,pch=rep(15,length(pal)),cex=0.8);
+    ##legend(param$legend_side, legend = paste(run_name,seq(length(pal))[rmask]), col = pal[rmask],pch=rep(15,length(pal[rmask])),cex=0.8);
+
+    legend(param$legend_side, legend = paste(run_name,rec$runnames), col = pal,pch=rep(15,length(pal)),cex=0.8);
     
 ##    legend(par()$usr[2], par()$usr[3], legend = paste("run",seq(length(pal))), col = pal,pch=rep(15,length(pal)))
 
@@ -1055,12 +1126,12 @@ return(list(xlim0=xlim0,ylim0=ylim0));
 }
 
 
-##' @title popmapper". 
+##' @title popmap.find". 
 #' @export
-pop.mapper <- function(rec,param=param0,sample_group="samples"){
-    .ee.append("popmapper",environment());
+popmap.find <- function(rec,param=param0,sample_group_name="samples"){
+    .ee.append("popmap.find",environment());
 
-if(length(dev.list())==0)xinit();
+if(length(dev.list())==0)xinit(param$win_width,param$win_height);
     
     dist2=rec$dist2;
     dist2p=rec$dist2p;    
@@ -1068,18 +1139,18 @@ if(length(dev.list())==0)xinit();
     edges=pcoa$edges;
     
     print("find groups for different edge values..");
-    nths2=calc_groups(dist2,edges,param=param);
+    ngroups2=calc_groups(dist2,edges,param=param);
     
     print("find groups (peaks) for different gaussian smoothing..");
     re_calc_groups_sm=calc_groups_sm(dist2,edges,param$edge2ampsm,ndiv=param$ndiv);
-    nths_sm=re_calc_groups_sm$nths_sm;
+    ngroups_sm=re_calc_groups_sm$ngroups_sm;
     ampsm_ob=re_calc_groups_sm$ampsm_ob;
-    nths_sm_ob=re_calc_groups_sm$nths_sm_ob;
+    ngroups_sm_ob=re_calc_groups_sm$ngroups_sm_ob;
     
 ############################################################################
     dev.set(2);
 
-lims=plot_func0(pcoa,rec,param=param,sample_group=sample_group);
+lims=popmap.plotdata(pcoa,rec,param=param,sample_group_name=sample_group_name);
 xlim0=lims$xlim0;
 ylim0=lims$ylim0;
 #####################################################################
@@ -1087,13 +1158,13 @@ ylim0=lims$ylim0;
 dev.set(3);
     edge2ampsm=param$edge2ampsm;
     edgebuf=c(edges,edges*edge2ampsm);
-plot(edges*edge2ampsm,nths_sm,type="l",log="xy",col="blue",ylim=c(1,ncol(dist2)),xlim=c(min(edgebuf),max(edgebuf)),xlab="sd for Gaussian smoothing",ylab="Number of groups")
-lines(edges,nths2,col="black");
+plot(edges*edge2ampsm,ngroups_sm,type="l",log="xy",col="blue",ylim=c(1,ncol(dist2)),xlim=c(min(edgebuf),max(edgebuf)),xlab="sd for Gaussian smoothing",ylab="Number of groups")
+lines(edges,ngroups2,col="black");
 
     legend("topright", legend = c("Gaussian smooth","Neighbor connect","Significance"), col = c("blue","black","red"),pch=c(15,15,1),cex=0.8);
 
     popms=list(pcoa=pcoa);
-    if(param$nth_show<0){
+    if(param$ngroup_show<0){
         pvs=rep(1.0,20);
         count_sig=0;
         for(k in 2:20){
@@ -1111,41 +1182,44 @@ lines(edges,nths2,col="black");
             buf=rep(0,nrow(rec$sample.info));
             si=data.frame(rec$sample.info,GroupID=buf,pcoa.x=buf,pcoa.y=buf);
             sname=rec$sample.name2;
-            nth=popm$nth;
+            ngroup=popm$ngroup;
             for(i in 1:nrow(si)){
-                id=which(sname==si$FileName2[i]);
+                id=which(sname==si$SampleName2[i]);
                 if(length(id)>0){
-                    si$GroupID[i]=popm$cidsm[id];
+                    si$GroupID[i]=popm$cid_sm[id];
                     si$pcoa.x[i]=pcoa$points[id,1];
                     si$pcoa.y[i]=pcoa$points[id,2];
                     
                 }
             }
-            sample.info=si;
+##            sample.info=si;
+            nf=which(colnames(si)=="SampleName");
+            ##sample.info=si[,c(seq(2,nf),1,seq(nf+1,ncol(si)))];
+            sample.info=si[,c(seq(2,ncol(si)),1)];
             popm=append(popm,list(sample.info=sample.info));
 
             popms=append(list(popm),popms);
-            names(popms)[1]=paste0("nth",nth);
+            names(popms)[1]=paste0("ngroup",ngroup);
             
             dev.set(3);
             
-            points(ampsm_ob[k],nths_sm_ob[k],pch=1,col="red",lwd=1);
+            points(ampsm_ob[k],ngroups_sm_ob[k],pch=1,col="red",lwd=1);
             dev.set(4);
         }else{
             print(sprintf("p-value %2.3f higher than %2.3f",maxp,param$edge_p_value));
             
-            if((nths_sm_ob[k]>param$group_max)||(k==length(nths_sm_ob))){
+            if((ngroups_sm_ob[k]>param$group_max)||(k==length(ngroups_sm_ob))){
                 if(count_sig>0){
                 opid=max(which(pvs<param$edge_p_value));
                 popm=plot_power(pcoa,rec,ampsm_ob[opid],param=param);
                 ##maxpb=popm$maxpb;
                 print("Maximum identified subpopulations:");
-                nth=opid;
-                print(nth);
+                ngroup=opid;
+                print(ngroup);
 
                 ##popms=append(list(popm),popms);
-                ##names(popms)[1]=paste0("nth",nth);
-                
+                ##names(popms)[1]=paste0("ngroup",ngroup);
+                print(names(popms));
                 }else{
                     print("No significant group structure detected!");
                 }
@@ -1157,15 +1231,16 @@ lines(edges,nths2,col="black");
  ##       popms=c(popms,popm);
     }
 }else{
-    ampsm=ampsm_ob[which(nths_sm_ob==param$nth_show)];
+    ampsm=ampsm_ob[which(ngroups_sm_ob==param$ngroup_show)];
     popm=plot_power(pcoa,rec,ampsm,param=param);
     print("Identified subpopulations:");
-    print(nth);
+    print(ngroup);
     dev.set(3);
-    points(ampsm,nth,pch=1,col="purple");
+    points(ampsm,ngroup,pch=1,col="purple");
     dev.set(4);
     popms=append(list(popm),popms);
-    names(popms)[1]=paste0("nth",nth);
+    names(popms)[1]=paste0("ngroup",ngroup);
+    print(names(popms));
     return(popms);
 }
 
@@ -1195,7 +1270,7 @@ out_result <- function(ofile,amp_euc,amp_bin,omit_popid){
 ##nsamp=200;
 ##.ee.set();
 ##if(length(dev.list())==0)xinit();
-##if(flag_calc)rec=calc_distance(file_tsv=file_tsv,file_sample_location=file_sample_location, runnames=runnames,omit_popid=omit_popid);
+##if(flag_calc)rec=popmap.calcdist(file_tsv=file_tsv,file_sample_location=file_sample_location, runnames=runnames,omit_popid=omit_popid);
 ##popmap=popmapper(rec,nsamp=nsamp);
 
 
