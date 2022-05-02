@@ -19,7 +19,7 @@
 #' @keywords internal
 "_PACKAGE"
 
-flag_envs=TRUE;
+flag_envs=FALSE;
 
 ##' @author Hiroshi C. Ito
 #' @export
@@ -119,6 +119,34 @@ find_peak <- function(pcoa,ampsm,ndiv=100){
 }
 
 
+calc_dist_unit <- function(i,nn,tab11,mask,amp_euc,amp_bin,flag_binary=2){
+        ##     for(i in 1:nn){
+        if(i%%50==0)cat(100*i/nn,"% ");
+        idm00=rep(i,nn);
+        idm11=seq(nn);
+        mask=tab11[i,]>0;
+        nm=sum(mask);
+        if(flag_binary==1){
+            vv=(tab11[idm00,mask]>0)-(tab11[idm11,mask]>0);
+            vv=rowSums(abs(vv)>0)/nm;
+        }
+        if(flag_binary==0){
+            vv=(tab11[idm00,mask])-(tab11[idm11,mask]);
+            vv=rowSums(abs(vv)>0)/nm;
+        }
+        if(flag_binary==2){
+            vv00=tab11[idm00,mask];
+            vv11=tab11[idm11,mask];
+            vv_bi=(vv00>0)-(vv11>0);
+            vv_eu=(vv00)-(vv11);
+            vv_bi=(abs(vv_bi)>0);
+            vv_eu=(abs(vv_eu)>0);
+            vv_eu=vv_eu-vv_bi;
+            n_eu_eff=rowSums((vv00>0)+(vv11>0)==2);
+            vv=amp_euc*rowSums(vv_eu)/nm+amp_bin*rowSums(vv_bi)/nm;
+        }
+            return(c(vv,mean(n_eu_eff)));
+}
 
 
 calc_dist <- function(tab1,amp_euc=1,amp_bin=0,flag_binary=2,flag_pforeach=1){
@@ -171,34 +199,6 @@ calc_dist <- function(tab1,amp_euc=1,amp_bin=0,flag_binary=2,flag_pforeach=1){
     return(list(neu=n_eu,dist=dist0));
 }
 
-calc_dist_unit <- function(i,nn,tab11,mask,amp_euc,amp_bin,flag_binary=2){
-        ##     for(i in 1:nn){
-        if(i%%50==0)cat(100*i/nn,"% ");
-        idm00=rep(i,nn);
-        idm11=seq(nn);
-        mask=tab11[i,]>0;
-        nm=sum(mask);
-        if(flag_binary==1){
-            vv=(tab11[idm00,mask]>0)-(tab11[idm11,mask]>0);
-            vv=rowSums(abs(vv)>0)/nm;
-        }
-        if(flag_binary==0){
-            vv=(tab11[idm00,mask])-(tab11[idm11,mask]);
-            vv=rowSums(abs(vv)>0)/nm;
-        }
-        if(flag_binary==2){
-            vv00=tab11[idm00,mask];
-            vv11=tab11[idm11,mask];
-            vv_bi=(vv00>0)-(vv11>0);
-            vv_eu=(vv00)-(vv11);
-            vv_bi=(abs(vv_bi)>0);
-            vv_eu=(abs(vv_eu)>0);
-            vv_eu=vv_eu-vv_bi;
-            n_eu_eff=rowSums((vv00>0)+(vv11>0)==2);
-            vv=amp_euc*rowSums(vv_eu)/nm+amp_bin*rowSums(vv_bi)/nm;
-        }
-            return(c(vv,mean(n_eu_eff)));
-}
         
 sum_ind_wise <- function(dist0,idsu){
     nnu=length(idsu);
@@ -733,31 +733,93 @@ calc_inde <- function(pxp,pyp){
     return(list(inde=inde,vb=(varb/(length(pxp))),va=vara,vw=(varw/(length(pxp)-ngroup))));
 }
 
-cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
+cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=param0$flag_welch_t_test,nperm=param0$nperm,flag_pforeach=param0$flag_pforeach){
     
     ngroup=max(cid_sm);
     distcm=matrix(rep(0.0,ngroup*ngroup),nrow=ngroup,ncol=ngroup);
     pvs=distcm;
+
+    ilis=NULL;
+    jlis=NULL;
     for(i in 1:(ngroup-1)){
         for(j in (i+1):ngroup){
-            lis=which((cid_sm==i)+(cid_sm==j)>0);
-            dist2pp=dist2p[lis,lis];
-            cid=cid_sm[lis];
-            rec=cmdscale(dist2pp);
-            pp=rec[,1];
-            pi=(rec[(cid==i),1]);
-            pj=(rec[(cid==j),1]);
-            sdi=sd(pi);
-            sdj=sd(pj);
-            dij=abs(mean(pi)-mean(pj));
-            ##sdw=(length(pi)*sdi+length(pj)*sdj)/(length(lis));
-            sdw=sqrt((sqm(pi)+sqm(pj))/(length(lis)-2));
-            if(flag_welch_t_test==1)sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
-            
-            ##distcm[i,j]=dij/(0.5*(sdi+sdj));
-            distcm[i,j]=dij/sdw;
-            distcm[j,i]=distcm[i,j];
+            ilis=c(ilis,i);
+            jlis=c(jlis,j);
+        }
+    }
 
+
+if(0){
+    for(k in 1:length(ilis)){
+        res=cmdist_unit(k, ilis,jlis,dist2p,cid_sm,test=test,flag_welch_t_test=flag_welch_t_test,nperm=nperm);
+
+    }
+}
+
+     if(flag_pforeach==1){
+         print("using pforeach..");
+         res=pforeach::pforeach(k=1:length(ilis), .combine='rbind',.errorhandling="stop")({    
+             cmdist_unit(k, ilis,jlis,dist2p,cid_sm,test=test,flag_welch_t_test=flag_welch_t_test,nperm=nperm);
+         });
+         
+     }else{
+         print("using foreach..");
+         res=foreach::foreach(k=1:length(ilis),.combine='rbind',.packages="foreach")%do%{
+             cmdist_unit(k, ilis,jlis,dist2p,cid_sm,test=test,flag_welch_t_test=flag_welch_t_test,nperm=nperm);
+         };
+
+     }
+         
+##    print(c(length(ilis),res));
+
+    for(k in 1:length(ilis)){
+        if(length(ilis)==1){
+            dm0=res[1];
+            pv0=res[2];
+            
+        }else{
+            dm0=res[k,1];
+            pv0=res[k,2];
+            
+        }
+        
+        distcm[ilis[k],jlis[k]]=dm0;
+        distcm[jlis[k],ilis[k]]=dm0;
+        pvs[ilis[k],jlis[k]]=pv0;
+        pvs[jlis[k],ilis[k]]=pv0;
+    }
+    ##}
+    
+
+    ##    print("a");
+    ##    print(pvs);
+    return(list(distcm=distcm,pvs=pvs));
+}
+
+
+cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
+    i=ilis[k];
+    j=jlis[k];
+    lis=which((cid_sm==i)+(cid_sm==j)>0);
+    dist2pp=dist2p[lis,lis];
+    cid=cid_sm[lis];
+    rec=cmdscale(dist2pp);
+    pp=rec[,1];
+    pi=(rec[(cid==i),1]);
+    pj=(rec[(cid==j),1]);
+    sdi=sd(pi);
+    sdj=sd(pj);
+    dij=abs(mean(pi)-mean(pj));
+    pv=1.0;
+    ##sdw=(length(pi)*sdi+length(pj)*sdj)/(length(lis));
+    sdw=sqrt((sqm(pi)+sqm(pj))/(length(lis)-2));
+    if(flag_welch_t_test==1)sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
+    
+    ##distcm[i,j]=dij/(0.5*(sdi+sdj));
+    ##distcm[i,j]=dij/sdw;
+    ##distcm[j,i]=distcm[i,j];
+            dm0=dij/sdw;
+            
             if(test==TRUE){
                 if(flag_welch_t_test==1)sdw=sdw1;
                 inde0=dij/sdw;
@@ -778,21 +840,18 @@ cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
                     indes[k]=dij/sdw;
                 }
                 p_value=(sum(indes>inde0)+sum(indes==inde0)*0.5)/nperm;
+
+##                print(c(dm0,p_value));
+                
                 if(!is.na(p_value)){
-                     pvs[i,j]=p_value;
-                     pvs[j,i]=p_value;
+                     pv=p_value;
+                     ##pvs[j,i]=p_value;
                 }
             }
-            
-            }
-            
-    }
+   
+            return(c(dm0,pv))
+     }
 
-
-##    print("a");
-##    print(pvs);
-    return(list(distcm=distcm,pvs=pvs));
-}
 
 ##' @title popmap.plot". 
 #' @export
@@ -913,9 +972,9 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
         recm0=NULL;
         if(flag_do_perm==1){
             print("cmdist..");
-            recm=cmdist(dist2p,cid_sm,test=TRUE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm);
+            recm=cmdist(dist2p,cid_sm,test=TRUE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm,flag_pforeach=param$flag_pforeach);
             
-            recm0=cmdist(dist2,cid_sm,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm);
+            recm0=cmdist(dist2,cid_sm,test=FALSE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm,flag_pforeach=param$flag_pforeach);
         }
 
         
