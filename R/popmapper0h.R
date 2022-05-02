@@ -433,7 +433,7 @@ popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=N
         }
 
         
-        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info,amp_euc=amp_euc,amp_bin=amp_bin));   
+        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info,amp_euc=amp_euc,amp_bin=amp_bin,omit_popid=omit_popid));   
 }
 
 get_pcoa2d <- function(dist2,nsamp,ampst=0.8,amped=1.2){
@@ -1098,6 +1098,7 @@ popmap.plotdata <- function(pcoa,rec,param=param0,sample_group_name="samples"){
 
    amp_euc=rec$amp_euc;
    amp_bin=rec$amp_bin;
+   omit_popid=rec$omit_popid;
    
    runnames=rec$runnames;
     masks=rec$masks;
