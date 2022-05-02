@@ -119,6 +119,7 @@ find_peak <- function(pcoa,ampsm,ndiv=100){
 }
 
 
+#' @export
 calc_dist_unit <- function(i,nn,tab11,mask,amp_euc,amp_bin,flag_binary=2){
         ##     for(i in 1:nn){
         if(i%%50==0)cat(100*i/nn,"% ");
