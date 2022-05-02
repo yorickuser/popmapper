@@ -26,11 +26,11 @@ flag_envs=FALSE;
 param0=list(
     flag_cols_cerwave=0,
     flag_fix_kdis=1,
-    flag_welch_t_test=1,
+    flag_welch_t_test=0,
     kdis0=2,
     flag_random=1,
     flag_perm=1, ## 1 or -1 (flip former and latter)
-    nperm=2000,
+    nperm=5000,
     edge2ampsm=10.0,
     ngroup_show=-1, ## -1: optimize
     edge_p_value=0.001,
@@ -433,7 +433,7 @@ popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=N
         }
 
         
-        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info));   
+        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info,amp_euc=amp_euc,amp_bin=amp_bin));   
 }
 
 get_pcoa2d <- function(dist2,nsamp,ampst=0.8,amped=1.2){
@@ -1096,6 +1096,9 @@ pngout<-function(dev_id=as.numeric(dev.list()[length(dev.list())]),plotfile="tes
 popmap.plotdata <- function(pcoa,rec,param=param0,sample_group_name="samples"){
    if(flag_envs).ee.append("popmap.plotdata",environment());
 
+   amp_euc=rec$amp_euc;
+   amp_bin=rec$amp_bin;
+   
    runnames=rec$runnames;
     masks=rec$masks;
     mask=rec$mask;
