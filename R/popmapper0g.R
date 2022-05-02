@@ -15,14 +15,11 @@
 
 #' Experimental R package.
 #' @aliases  popmapper popmapper-package
+#' #' @importFrom foreach %do%
 #' @keywords internal
 "_PACKAGE"
 
-library(envstocker);
-library(pforeach);
-library(pracma);
-
-
+flag_envs=FALSE;
 
 ##' @author Hiroshi C. Ito
 #' @export
@@ -52,7 +49,8 @@ param0=list(
     flag_binary=2, ## 0 euclid, 1 my binary, 2 hybrid, 3 binary by R function
     nsamp=200,
     win_width=c(5,5,5,5),
-    win_height=c(4,4,4,4)
+    win_height=c(4,4,4,4),
+    flag_pforeach=0
     );
 
 
@@ -123,7 +121,7 @@ find_peak <- function(pcoa,ampsm,ndiv=100){
 
 
 
-calc_dist <- function(tab1,amp_euc=1,amp_bin=0,flag_binary=2){
+calc_dist <- function(tab1,amp_euc=1,amp_bin=0,flag_binary=2,flag_pforeach=1){
     nn=nrow(tab1);
     nc=ncol(tab1);
     
@@ -153,8 +151,27 @@ calc_dist <- function(tab1,amp_euc=1,amp_bin=0,flag_binary=2){
     
     
     nn=nrow(tab11);
-    dist0=pforeach(i=1:nn, .combine='rbind',.errorhandling="stop")({    
-        
+
+    if(flag_pforeach==1){
+        print("using pforeach..");
+        dist0=pforeach::pforeach(i=1:nn, .combine='rbind',.errorhandling="stop")({    
+            calc_dist_unit(i,nn,tab11,mask,amp_euc,amp_bin,flag_binary=flag_binary);
+        });
+    }else{
+        print("using foreach..");
+        dist0=foreach::foreach(i=1:nn,.combine='rbind',.packages="foreach")%do%{    
+            calc_dist_unit(i,nn,tab11,mask,amp_euc,amp_bin,flag_binary=flag_binary);
+        };
+    }
+
+    
+    n_eu=dist0[,ncol(dist0)];
+    dist0=dist0[,-ncol(dist0)];
+    dist0=0.5*(dist0+t(dist0));
+    return(list(neu=n_eu,dist=dist0));
+}
+
+calc_dist_unit <- function(i,nn,tab11,mask,amp_euc,amp_bin,flag_binary=2){
         ##     for(i in 1:nn){
         if(i%%50==0)cat(100*i/nn,"% ");
         idm00=rep(i,nn);
@@ -180,16 +197,9 @@ calc_dist <- function(tab1,amp_euc=1,amp_bin=0,flag_binary=2){
             n_eu_eff=rowSums((vv00>0)+(vv11>0)==2);
             vv=amp_euc*rowSums(vv_eu)/nm+amp_bin*rowSums(vv_bi)/nm;
         }
-        c(vv,mean(n_eu_eff));      
-    });
-    
-    n_eu=dist0[,ncol(dist0)];
-    dist0=dist0[,-ncol(dist0)];
-    dist0=0.5*(dist0+t(dist0));
-    return(list(neu=n_eu,dist=dist0));
+            return(c(vv,mean(n_eu_eff)));
 }
-
-
+        
 sum_ind_wise <- function(dist0,idsu){
     nnu=length(idsu);
     
@@ -215,7 +225,7 @@ sum_ind_wise <- function(dist0,idsu){
 
   
 read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_location,omit_popid=omit_popid,amp_euc=1,amp_bin=0,param=param0){
-    .ee.append("read_data",environment());
+    if(flag_envs).ee.append("read_data",environment());
     
     print("reading file...");    
     df=read.csv(file_tsv,header=F,sep="\t",comment.char="#");
@@ -348,7 +358,7 @@ read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_locatio
 ##' @title popmap.readdata". 
 #' @export
 popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=NULL,amp_euc=1,amp_bin=0,param=param0){
-    .ee.append("popmap.readdata",environment());
+    if(flag_envs).ee.append("popmap.readdata",environment());
     
     set.seed(param$runseed);
     
@@ -374,8 +384,8 @@ popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=N
         print("calculating distance...");
         
         
-        res_calc_dist=calc_dist(tab1,amp_euc=amp_euc,amp_bin=amp_bin,flag_binary=param$flag_binary);
-        res_calc_distp=calc_dist(tab1p,amp_euc=amp_euc,amp_bin=amp_bin,flag_binary=param$flag_binary);
+        res_calc_dist=calc_dist(tab1,amp_euc=amp_euc,amp_bin=amp_bin,flag_binary=param$flag_binary,flag_pforeach=param$flag_pforeach);
+        res_calc_distp=calc_dist(tab1p,amp_euc=amp_euc,amp_bin=amp_bin,flag_binary=param$flag_binary,flag_pforeach=param$flag_pforeach);
         
         dist0=res_calc_dist$dist;
         n_eu=res_calc_dist$neu;    
@@ -566,7 +576,7 @@ ccerwaved <- function(i,j,id,wa){
 }
 
 map_power <- function(pcoa,rec,ampsm_opt,ndiv=100){
-    .ee.append("map_power",environment());
+    if(flag_envs).ee.append("map_power",environment());
 
     popids2=rec$popids2;
    
@@ -764,7 +774,7 @@ cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
 ##' @title popmap.plot". 
 #' @export
 popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
-    .ee.append("popmap.plot",environment());
+    if(flag_envs).ee.append("popmap.plot",environment());
     cid_sm=popmap$cid_sm;
     if(perm==1){
         pcoap=popmap$pcoap;
@@ -789,7 +799,7 @@ popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
 }
 
 plot_power_map <- function(pcoa,res,cid_sm,flag_fix_lim=0,pals=NULL,ccer0=NULL,ccer1=NULL,labels=NULL,flag_map=1,main=NULL,param=param0){
-    .ee.append("plot_power_map",environment());
+    if(flag_envs).ee.append("plot_power_map",environment());
     xx0=res$xx0;
     yy0=res$yy0;
     xx=res$xx;
@@ -840,7 +850,7 @@ plot_power_map <- function(pcoa,res,cid_sm,flag_fix_lim=0,pals=NULL,ccer0=NULL,c
 
 
 plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
-    .ee.append("plot_power",environment());
+    if(flag_envs).ee.append("plot_power",environment());
     dist2=rec$dist2;
     dist2p=rec$dist2p;
     popids2=rec$popids2;
@@ -985,7 +995,7 @@ pngout<-function(dev_id=as.numeric(dev.list()[length(dev.list())]),plotfile="tes
 ##' @title popmap.plotdata". 
 #' @export
 popmap.plotdata <- function(pcoa,rec,param=param0,sample_group_name="samples"){
-   .ee.append("popmap.plotdata",environment());
+   if(flag_envs).ee.append("popmap.plotdata",environment());
 
    runnames=rec$runnames;
     masks=rec$masks;
@@ -1129,7 +1139,7 @@ return(list(xlim0=xlim0,ylim0=ylim0));
 ##' @title popmap.find". 
 #' @export
 popmap.find <- function(rec,param=param0,sample_group_name="samples"){
-    .ee.append("popmap.find",environment());
+    if(flag_envs).ee.append("popmap.find",environment());
 
 if(length(dev.list())==0)xinit(param$win_width,param$win_height);
     
@@ -1261,19 +1271,5 @@ popmap.out <- function(ofile,amp_euc,amp_bin,omit_popid){
         }
 
 }
-
-
-##_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-##_/_/_/_/_/_/_/_/_/_/_/_/   MAIN   _/_/_/_/_/_/_/_/_/_/_/
-##_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-
-##nsamp=200;
-##.ee.set();
-##if(length(dev.list())==0)xinit();
-##if(flag_calc)rec=popmap.calcdist(file_tsv=file_tsv,file_sample_location=file_sample_location, runnames=runnames,omit_popid=omit_popid);
-##popmap=popmapper(rec,nsamp=nsamp);
-
-
-
 
 
