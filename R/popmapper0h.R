@@ -1323,7 +1323,7 @@ lines(edges,ngroups2,col="black");
             points(ampsm_ob[k],ngroups_sm_ob[k],pch=1,col="red",lwd=1);
             dev.set(4);
         }else{
-            print(sprintf("p-value %2.3f higher than %2.3f  ->>  not sifnificant !!!",maxp,param$edge_p_value));
+            print(sprintf("p-value %2.3f higher than %2.3f  ->>  not significant !!!",maxp,param$edge_p_value));
             
             if((ngroups_sm_ob[k]>param$group_max)||(k==length(ngroups_sm_ob))){
                 if(count_sig>0){
