@@ -44,7 +44,6 @@ param0=list(
     flag_ind_wise=1,
     flag_read_sample_location=1,
     flag_show_legend_location=1,
-    runseed=3571,
     flag_runid=1,
     flag_binary=2, ## 0 euclid, 1 my binary, 2 hybrid, 3 binary by R function
     nsamp=200,
@@ -52,6 +51,7 @@ param0=list(
     win_height=c(5,5,5,5),
     flag_pforeach=0
     );
+
 
 
 ##win_width=6;
@@ -359,10 +359,10 @@ read_data <- function(file_tsv=file_tsv,file_sample_location=file_sample_locatio
 
 ##' @title popmap.readdata". 
 #' @export
-popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=NULL,amp_euc=1,amp_bin=0,param=param0){
+popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,  sample_group_name="Samples", omit_popid=NULL,amp_euc=1,amp_bin=0,param=param0){
     if(flag_envs).ee.append("popmap.readdata",environment());
-    
-    set.seed(param$runseed);
+
+  
     
     re_read_data=read_data(file_tsv=file_tsv,file_sample_location=file_sample_location, omit_popid=omit_popid,amp_euc=amp_euc,amp_bin=amp_bin,param=param0);
 
@@ -433,7 +433,7 @@ popmap.readdata <- function(file_tsv=NULL,file_sample_location=NULL,omit_popid=N
         }
 
         
-        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info,amp_euc=amp_euc,amp_bin=amp_bin,omit_popid=omit_popid));   
+        return(list(dist2=dist2,dist2p=dist2p,ids2=ids2,popids2=popids2,popnames2=popnames2,sample.name2=sample.name2,sample.name=sample.name,popid.legend=popid_u,popname.legend=popname_u,tab00=tab00,tab1=tab1,tab1p=tab1p,ids=ids,popids1=popids1,runids1=runids1,popids=popids,popnames=popnames,neu=n_eu,neup=n_eup,masks=masks,mask=mask,nrun=nrun, runnames=runnames,runid=runid,sample.info=re_read_data$sample.info,amp_euc=amp_euc,amp_bin=amp_bin,omit_popid=omit_popid,sample_group_name=sample_group_name));   
 }
 
 get_pcoa2d <- function(dist2,nsamp,ampst=0.8,amped=1.2){
@@ -738,8 +738,8 @@ calc_inde <- function(pxp,pyp){
 cmdist <- function(dist2p,cid_sm,test=FALSE,flag_welch_t_test=param0$flag_welch_t_test,nperm=param0$nperm,flag_pforeach=param0$flag_pforeach){
     
     ngroup=max(cid_sm);
-    distcm=matrix(rep(0.0,ngroup*ngroup),nrow=ngroup,ncol=ngroup);
-    pvs=distcm;
+    gdis=matrix(rep(0.0,ngroup*ngroup),nrow=ngroup,ncol=ngroup);
+    pvs=gdis;
 
     ilis=NULL;
     jlis=NULL;
@@ -785,8 +785,8 @@ if(0){
             
         }
         
-        distcm[ilis[k],jlis[k]]=dm0;
-        distcm[jlis[k],ilis[k]]=dm0;
+        gdis[ilis[k],jlis[k]]=dm0;
+        gdis[jlis[k],ilis[k]]=dm0;
         pvs[ilis[k],jlis[k]]=pv0;
         pvs[jlis[k],ilis[k]]=pv0;
     }
@@ -795,7 +795,7 @@ if(0){
 
     ##    print("a");
     ##    print(pvs);
-    return(list(distcm=distcm,pvs=pvs));
+    return(list(gdis=gdis,pvs=pvs));
 }
 
 #' @export
@@ -817,9 +817,9 @@ cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=
     sdw=sqrt((sqm(pi)+sqm(pj))/(length(lis)-2));
     if(flag_welch_t_test==1)sdw1=sqrt(sdi^2/length(pi)+sdj^2/length(pj));
     
-    ##distcm[i,j]=dij/(0.5*(sdi+sdj));
-    ##distcm[i,j]=dij/sdw;
-    ##distcm[j,i]=distcm[i,j];
+    ##gdis[i,j]=dij/(0.5*(sdi+sdj));
+    ##gdis[i,j]=dij/sdw;
+    ##gdis[j,i]=gdis[i,j];
             dm0=dij/sdw;
             
             if(test==TRUE){
@@ -868,8 +868,8 @@ popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
 
         if(length(main)==0){
             if(popmap$maxp>0){
-                maxij=(which(popmap$recm$pvs==max(popmap$recm$pvs),arr.ind=T))[1,];
-                main=sprintf("max p-value: %f (%d:%d nperm: %d)",max(popmap$recm$pvs),maxij[1],maxij[2],param$nperm);
+                maxij=(which(popmap$gdist$pvs==max(popmap$gdist$pvs),arr.ind=T))[1,];
+                main=sprintf("max p-value: %f (%d:%d nperm: %d)",max(popmap$gdist$pvs),maxij[1],maxij[2],param$nperm);
             }else{
                 main=sprintf("max p-value: %f (nperm: %d)",popmap$maxp,param$nperm);
              
@@ -943,17 +943,17 @@ plot_power_map <- function(pcoa,res,cid_sm,flag_fix_lim=0,pals=NULL,ccer0=NULL,c
 }
 
 
-print_recm <- function(recm,recm0){
-                options(digits=2);
+print_gdist <- function(gdist,gdist0){
+##                options(digits=4);
                 
-                cat("\n\n distcm0\n");
-                print(recm0$distcm);
+                cat("\n\nGenetic distance matrix calculated from data for grouping: \n");
+                print(gdist0$gdis);
                 
-                cat("distcm\n");
-                print(recm$distcm);
-                options(digits=7);     
-                cat("p-value\n");
-                print(recm$pvs);
+                cat("\n\nGenetic distance matrix calculated from data for petmutation test: \n");
+                print(gdist$gdis);
+##                options(digits=7);     
+                cat("p-values: \n");
+                print(gdist$pvs);
                 cat("\n");
 }
 
@@ -994,13 +994,13 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
         flag_do_perm=0;
         if(sum(cid_count<=1)<2)flag_do_perm=1;
 
-        recm=NULL;
-        recm0=NULL;
+        gdist=NULL;
+        gdist0=NULL;
         if(flag_do_perm==1){
-            print("cmdist..");
-            recm=cmdist(dist2p,cid_sm,test=TRUE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm,flag_pforeach=param$flag_pforeach);
+            print("calculating genetic distances among subpopulations..");
+            gdist=cmdist(dist2p,cid_sm,test=TRUE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm,flag_pforeach=param$flag_pforeach);
             
-            recm0=cmdist(dist2,cid_sm,test=FALSE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm,flag_pforeach=param$flag_pforeach);
+            gdist0=cmdist(dist2,cid_sm,test=FALSE,flag_welch_t_test=param$flag_welch_t_test,nperm=param$nperm,flag_pforeach=param$flag_pforeach);
         }
 
         
@@ -1024,10 +1024,10 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
 
         maxij=1.0;
         if(flag_do_perm==1){
-            maxij=(which(recm$pvs==max(recm$pvs),arr.ind=T))[1,];
+            maxij=(which(gdist$pvs==max(gdist$pvs),arr.ind=T))[1,];
         }    
         if(flag_do_perm==1){
-            main0=sprintf("max p-value: %f (%d:%d nperm: %d)",max(recm$pvs),maxij[1],maxij[2],param$nperm);
+            main0=sprintf("max p-value: %f (%d:%d nperm: %d)",max(gdist$pvs),maxij[1],maxij[2],param$nperm);
         }else{
             main0="too small populations!!";
         }
@@ -1037,7 +1037,7 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
 
         if(flag_do_perm==1){
 
-            print_recm(recm,recm0);
+            print_gdist(gdist,gdist0);
         }
         
         if(0){
@@ -1045,7 +1045,7 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
                 cat(i,":\n ");
                 for(j in 1:ngroup){
                     if(i!=j){
-                        cat(sprintf("%d %2.2f ",j,distcm[i,j]));
+                        cat(sprintf("%d %2.2f ",j,gdis[i,j]));
                     }
                 }
                 cat("\n");
@@ -1057,10 +1057,10 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
 }
     maxp=1.0;
       if(flag_do_perm==1){
-          maxp=max(recm$pvs);
+          maxp=max(gdist$pvs);
       }
     
-    return(list(ngroup=ngroup,maxp=maxp,cid_sm=cid_sm,popids2=popids2,recm=recm,recm0=recm0,powermap=res,pcoa=pcoa,pcoap=pcoap,ampsm=ampsm_opt,pals=pals));
+    return(list(ngroup=ngroup,maxp=maxp,cid_sm=cid_sm,popids2=popids2,gdist=gdist,gdist0=gdist0,powermap=res,pcoa=pcoa,pcoap=pcoap,ampsm=ampsm_opt,pals=pals));
 }
 
 
@@ -1093,26 +1093,28 @@ pngout<-function(dev_id=as.numeric(dev.list()[length(dev.list())]),plotfile="tes
 
 ##' @title popmap.plotdata". 
 #' @export
-popmap.plotdata <- function(pcoa,rec,param=param0,sample_group_name="samples"){
+popmap.plotdata <- function(pcoa,data,param=param0,sample_group_name=NULL,flag_lim_out=0){
    if(flag_envs).ee.append("popmap.plotdata",environment());
 
-   amp_euc=rec$amp_euc;
-   amp_bin=rec$amp_bin;
-   omit_popid=rec$omit_popid;
+   if(length(sample_group_name)==0)sample_group_name=data$sample_group_name;
    
-   runnames=rec$runnames;
-    masks=rec$masks;
-    mask=rec$mask;
-    nrun=rec$nrun;
-    popnames=rec$popnames;
-    popids2=rec$popids2;
-    popids=rec$popids;
-    runids1=rec$runids1;    
-   runid=rec$runid;
+   amp_euc=data$amp_euc;
+   amp_bin=data$amp_bin;
+   omit_popid=data$omit_popid;
    
-    n_eu=rec$neu;
-    nn=nrow(rec$tab1);
-    nc=ncol(rec$tab1);
+   runnames=data$runnames;
+    masks=data$masks;
+    mask=data$mask;
+    nrun=data$nrun;
+    popnames=data$popnames;
+    popids2=data$popids2;
+    popids=data$popids;
+    runids1=data$runids1;    
+   runid=data$runid;
+   
+    n_eu=data$neu;
+    nn=nrow(data$tab1);
+    nc=ncol(data$tab1);
     xmax=max(pcoa$points[,1]);
     xmin=min(pcoa$points[,1]);
     gx=0.5*(xmax+xmin);
@@ -1173,7 +1175,7 @@ if(param$flag_runid==1){
     }else{
         ##        pal=rev(rainbow(nrun,end=0.7));
         ##        pal=rev(rainbow(nrun,end=0.7,v=0.8));
-        runid=rec$runid;
+        runid=data$runid;
         pal=rev(rainbow(length(runid),end=0.7,v=0.8));
         cols=rep("blue",nn);
         
@@ -1194,7 +1196,7 @@ if(param$flag_runid==1){
     
     ##legend(param$legend_side, legend = paste(run_name,seq(length(pal))[rmask]), col = pal[rmask],pch=rep(15,length(pal[rmask])),cex=0.8);
 
-    legend(param$legend_side, legend = paste(run_name,rec$runnames), col = pal,pch=rep(15,length(pal)),cex=0.8);
+    legend(param$legend_side, legend = paste(run_name,data$runnames), col = pal,pch=rep(15,length(pal)),cex=0.8);
     
 ##    legend(par()$usr[2], par()$usr[3], legend = paste("run",seq(length(pal))), col = pal,pch=rep(15,length(pal)))
 
@@ -1205,7 +1207,7 @@ if(param$flag_read_sample_location==1){
     ##for(i in 1:length(popid_u))popname_u[i]=popnames[(which(popids==popid_u[i]))[1]];
     
     
-    legend(par()$usr[2], par()$usr[4], legend = paste0(rec$popid.legend,": ",rec$popname.legend), col = "black",cex=0.7,bty="n");
+    legend(par()$usr[2], par()$usr[4], legend = paste0(data$popid.legend,": ",data$popname.legend), col = "black",cex=0.7,bty="n");
 
     text(par()$usr[2], par()$usr[3], labels = paste("Omitted \npopids:",paste(omit_popid,collapse=", ")), col = "red",cex=0.8,pos=4)
 
@@ -1235,16 +1237,18 @@ if(param$flag_runid==0){
 
     legend("topright", legend = pops, col = pal,pch=rep(3,length(pal)));
 }
-return(list(xlim0=xlim0,ylim0=ylim0));
+
+   if(flag_lim_out==1)return (list(xlim0=xlim0,ylim0=ylim0));
 }
 
 
 ##' @title popmap.find". 
 #' @export
-popmap.find <- function(rec,param=param0,sample_group_name="samples"){
+popmap.find <- function(rec,param=param0,sample_group_name=NULL){
     if(flag_envs).ee.append("popmap.find",environment());
 
-if(length(dev.list())==0)xinit(param$win_width,param$win_height);
+    if(length(sample_group_name)==0)sample_group_name=rec$sample_group_name;
+    if(length(dev.list())==0)xinit(param$win_width,param$win_height);
     
     dist2=rec$dist2;
     dist2p=rec$dist2p;    
@@ -1263,7 +1267,7 @@ if(length(dev.list())==0)xinit(param$win_width,param$win_height);
 ############################################################################
     dev.set(2);
 
-lims=popmap.plotdata(pcoa,rec,param=param,sample_group_name=sample_group_name);
+lims=popmap.plotdata(pcoa,rec,param=param,sample_group_name=sample_group_name,flag_lim_out=1);
 xlim0=lims$xlim0;
 ylim0=lims$ylim0;
 #####################################################################
@@ -1281,7 +1285,7 @@ lines(edges,ngroups2,col="black");
         pvs=rep(1.0,20);
         count_sig=0;
         for(k in 2:20){
-            cat("\n\n plot_power for ",k, "ampsm:",ampsm_ob[k]);
+            cat("\n\n::::Testing significance for ",k, "groups-mapping  (ampsm:",ampsm_ob[k],") \n");
             maxp=1.0;
             popm=plot_power(pcoa,rec,ampsm_ob[k],param=param);
             maxpb=popm$maxp;
@@ -1319,25 +1323,25 @@ lines(edges,ngroups2,col="black");
             points(ampsm_ob[k],ngroups_sm_ob[k],pch=1,col="red",lwd=1);
             dev.set(4);
         }else{
-            print(sprintf("p-value %2.3f higher than %2.3f",maxp,param$edge_p_value));
+            print(sprintf("p-value %2.3f higher than %2.3f  ->>  not sifnificant !!!",maxp,param$edge_p_value));
             
             if((ngroups_sm_ob[k]>param$group_max)||(k==length(ngroups_sm_ob))){
                 if(count_sig>0){
-                    opid=max(which(pvs<param$edge_p_value));
+                    ##opid=max(which(pvs<param$edge_p_value));
                     ##popm=plot_power(pcoa,rec,ampsm_ob[opid],param=param);
                     
                     dev.set(4);
                     popmap.plot(popms[[1]],param=param,perm=0)
                     dev.set(5);
                     popmap.plot(popms[[1]],param=param,perm=1)
+                    
+                    ##maxpb=popm$maxpb;
+                    cat("\n\n::::Maximum identified subpopulations: ",popms[[1]]$ngroup,"\n");
+                    cat("Max p-value: ",popms[[1]]$maxp,"\n");
 
-                    print_recm(popms[[1]]$recm,popms[[1]]$recm0);
+                    print_gdist(popms[[1]]$gdist,popms[[1]]$gdist0);
 
 
-                ##maxpb=popm$maxpb;
-                print("Maximum identified subpopulations:");
-                ngroup=opid;
-                print(ngroup);
 
                 ##popms=append(list(popm),popms);
                 ##names(popms)[1]=paste0("ngroup",ngroup);
