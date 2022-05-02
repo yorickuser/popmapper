@@ -866,8 +866,18 @@ popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
 
         if(length(resp)==0)resp=find_peak(pcoap,popmap$ampsm,ndiv=powermap$ndiv);
 
+        if(length(main)==0){
+            if(popmap$maxp>0){
+                maxij=(which(popmap$recm$pvs==max(popmap$recm$pvs),arr.ind=T))[1,];
+                main=sprintf("max p-value: %f (%d:%d nperm: %d)",max(popmap$recm$pvs),maxij[1],maxij[2],param$nperm);
+            }else{
+                main=sprintf("max p-value: %f (nperm: %d)",popmap$maxp,param$nperm);
+             
+            }
+            
+        }
 
-        if(length(main)==0)main=sprintf("ngroups: %d    max p-value: %f    sd: %2.3f",popmap$ngroup,popmap$maxp, popmap$ampsm);
+
 
         plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=popmap$pals,ccer0=powermap$cerr0,ccer1=powermap$ccer1,labels=paste(cid_sm),main=main,flag_map=0,param=param);
 
@@ -875,10 +885,11 @@ popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
     }else{
         pcoa=popmap$pcoa;
         powermap=popmap$powermap;
-        if(length(main)==0)main=sprintf("ngroups: %d   max p-value: %f    sd: %2.3f",popmap$ngroup,popmap$maxp,popmap$ampsm)
+        if(length(main)==0)main=sprintf("ngroups: %d   sd: %2.3f\n  max p-value: %f    nperm: %d",popmap$ngroup, popmap$ampsm,popmap$maxp,param$nperm);
+
         plot_power_map(pcoa,powermap,cid_sm,flag_fix_lim=0,pals=popmap$pals,ccer0=powermap$ccer0,ccer1=powermap$ccer1,labels=popmap$popids2,flag_map=1,main=main,param=param);
-
-
+        
+        
     }
 }
 
@@ -932,6 +943,19 @@ plot_power_map <- function(pcoa,res,cid_sm,flag_fix_lim=0,pals=NULL,ccer0=NULL,c
 }
 
 
+print_recm <- function(recm,recm0){
+                options(digits=2);
+                
+                cat("\n\n distcm0\n");
+                print(recm0$distcm);
+                
+                cat("distcm\n");
+                print(recm$distcm);
+                options(digits=7);     
+                cat("p-value\n");
+                print(recm$pvs);
+                cat("\n");
+}
 
 plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
     if(flag_envs).ee.append("plot_power",environment());
@@ -1011,18 +1035,9 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
         
         plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=pals,ccer0=res$cerr0,ccer1=res$ccer1,labels=paste(cid_sm),main=main0,flag_map=0,param=param);
 
-        if(flag_do_perm==1){        
-            options(digits=2);
-            
-            cat("\n\n distcm0\n");
-            print(recm0$distcm);
-            
-            cat("distcm\n");
-            print(recm$distcm);
-            options(digits=7);     
-            cat("p-value\n");
-            print(recm$pvs);
-            cat("\n");
+        if(flag_do_perm==1){
+
+            print_recm(recm,recm0);
         }
         
         if(0){
@@ -1304,8 +1319,17 @@ lines(edges,ngroups2,col="black");
             
             if((ngroups_sm_ob[k]>param$group_max)||(k==length(ngroups_sm_ob))){
                 if(count_sig>0){
-                opid=max(which(pvs<param$edge_p_value));
-                popm=plot_power(pcoa,rec,ampsm_ob[opid],param=param);
+                    opid=max(which(pvs<param$edge_p_value));
+                    ##popm=plot_power(pcoa,rec,ampsm_ob[opid],param=param);
+                    
+                    dev.set(4);
+                    popmap.plot(popms[[1]],param=param,perm=0)
+                    dev.set(5);
+                    popmap.plot(popms[[1]],param=param,perm=1)
+
+                    print_recm(popms[[1]]$recm,popms[[1]]$recm0);
+
+
                 ##maxpb=popm$maxpb;
                 print("Maximum identified subpopulations:");
                 ngroup=opid;
