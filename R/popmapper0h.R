@@ -79,6 +79,7 @@ fn <- function(x,y,mx,my,sx,sy){
  }
 
 
+#' @export
 find_peak <- function(pcoa,ampsm,ndiv=100){
     px=pcoa$points[,1]
     py=pcoa$points[,2]
@@ -797,7 +798,7 @@ if(0){
     return(list(distcm=distcm,pvs=pvs));
 }
 
-
+#' @export
 cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=1,nperm=1000){
     i=ilis[k];
     j=jlis[k];
