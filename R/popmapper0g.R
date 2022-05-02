@@ -19,7 +19,7 @@
 #' @keywords internal
 "_PACKAGE"
 
-flag_envs=FALSE;
+flag_envs=TRUE;
 
 ##' @author Hiroshi C. Ito
 #' @export
@@ -48,8 +48,8 @@ param0=list(
     flag_runid=1,
     flag_binary=2, ## 0 euclid, 1 my binary, 2 hybrid, 3 binary by R function
     nsamp=200,
-    win_width=c(5,5,5,5),
-    win_height=c(4,4,4,4),
+    win_width=c(6,6,6,6),
+    win_height=c(5,5,5,5),
     flag_pforeach=0
     );
 
@@ -508,25 +508,48 @@ calc_groups <- function(dist2,edges,param=param0){
     
     
     print("cerwave..");
-    ngroups2=rep(0,length(edges));    
-    for(i in 1:length(edges)){
+    nn=length(edges);
+    ##ngroups2=rep(0,length(edges));    
+    ##for(i in 1:length(edges)){
+    ngroups2=foreach::foreach(i=1:nn,.combine='rbind',.packages="foreach")%do%{
+        if(i%%50==0)cat(100*i/nn,"% ");
+                
         edge = edges[i];
         re_cerwave=do_cerwave(dis2,edge);
         ngroup=re_cerwave$ngroup;
         gid=re_cerwave$gid;
-        ngroups2[i]=ngroup;
-    }
+        ngroup;
+    };
     
     print("done");
     return(ngroups2);
 }
 
-calc_groups_sm <- function(dist2,edges,edge2ampsm,ndiv=100){
+calc_groups_sm <- function(dist2,edges,edge2ampsm,ndiv=100,flag_pforeach=param0$flag_pforeach){
     res= cmdscale(dist2, k = 2,eig=TRUE);
-    ngroups_sm=rep(0,length(edges));    
-    for(i in 1:length(edges)){
-        ngroups_sm[i]=(find_peak(res,edges[i]*edge2ampsm,ndiv=ndiv))$ngroup;
+    ##ngroups_sm=rep(0,length(edges));    
+    ##for(i in 1:length(edges)){
+    ##    ngroups_sm[i]=(find_peak(res,edges[i]*edge2ampsm,ndiv=ndiv))$ngroup;
+    ##}
+    nn=length(edges);
+ 
+
+    if(flag_pforeach==1){
+        print("using pforeach..");
+        ngroups_sm=pforeach::pforeach(i=1:nn, .combine='rbind',.errorhandling="stop")({    
+            if(i%%50==0)cat(100*i/nn,"% ");
+            (find_peak(res,edges[i]*edge2ampsm,ndiv=ndiv))$ngroup; 
+        });
+    }else{
+        print("using foreach..");
+        ngroups_sm=foreach::foreach(i=1:nn,.combine='rbind',.packages="foreach")%do%{
+            if(i%%50==0)cat(100*i/nn,"% ");
+            (find_peak(res,edges[i]*edge2ampsm,ndiv=ndiv))$ngroup;
+            
+        };
     }
+
+    
     print("done");
     
     ngroups_sm_ob=sort(unique(ngroups_sm));
@@ -1152,7 +1175,7 @@ if(length(dev.list())==0)xinit(param$win_width,param$win_height);
     ngroups2=calc_groups(dist2,edges,param=param);
     
     print("find groups (peaks) for different gaussian smoothing..");
-    re_calc_groups_sm=calc_groups_sm(dist2,edges,param$edge2ampsm,ndiv=param$ndiv);
+    re_calc_groups_sm=calc_groups_sm(dist2,edges,param$edge2ampsm,ndiv=param$ndiv,flag_pforeach=param$flag_pforeach);
     ngroups_sm=re_calc_groups_sm$ngroups_sm;
     ampsm_ob=re_calc_groups_sm$ampsm_ob;
     ngroups_sm_ob=re_calc_groups_sm$ngroups_sm_ob;
