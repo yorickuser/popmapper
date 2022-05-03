@@ -857,9 +857,17 @@ cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=
 
 ##' @title popmap.plot". 
 #' @export
-popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
+popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL,label_gid=FALSE){
     if(flag_envs).ee.append("popmap.plot",environment());
     cid_sm=popmap$cid_sm;
+
+    if(label_gid){
+        labels=paste(cid_sm);
+    }else{
+        
+        labels=popmap$popids2;
+    }
+    
     if(perm==1){
         pcoap=popmap$pcoap;
         powermap=popmap$powermap;
@@ -877,9 +885,8 @@ popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
             
         }
 
-
-
-        plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=popmap$pals,ccer0=powermap$cerr0,ccer1=powermap$ccer1,labels=paste(cid_sm),main=main,flag_map=0,param=param);
+        
+        plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=popmap$pals,ccer0=powermap$cerr0,ccer1=powermap$ccer1,labels=labels,main=main,flag_map=0,param=param);
 
         
     }else{
@@ -887,7 +894,7 @@ popmap.plot <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL){
         powermap=popmap$powermap;
         if(length(main)==0)main=sprintf("ngroups: %d   sd: %2.3f\n  max p-value: %f    nperm: %d",popmap$ngroup, popmap$ampsm,popmap$maxp,param$nperm);
 
-        plot_power_map(pcoa,powermap,cid_sm,flag_fix_lim=0,pals=popmap$pals,ccer0=powermap$ccer0,ccer1=powermap$ccer1,labels=popmap$popids2,flag_map=1,main=main,param=param);
+        plot_power_map(pcoa,powermap,cid_sm,flag_fix_lim=0,pals=popmap$pals,ccer0=powermap$ccer0,ccer1=powermap$ccer1,labels=labels,flag_map=1,main=main,param=param);
         
         
     }
@@ -1033,7 +1040,8 @@ plot_power <- function(pcoa,rec,ampsm_opt,param=param0){
         }
 
         
-        plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=pals,ccer0=res$cerr0,ccer1=res$ccer1,labels=paste(cid_sm),main=main0,flag_map=0,param=param);
+        ##plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=pals,ccer0=res$cerr0,ccer1=res$ccer1,labels=paste(cid_sm),main=main0,flag_map=0,param=param);
+        plot_power_map(pcoap,resp,cid_sm,flag_fix_lim=param$flag_fix_lim,pals=pals,ccer0=res$cerr0,ccer1=res$ccer1,labels=popids2,main=main0,flag_map=0,param=param);
 
         if(flag_do_perm==1){
 
