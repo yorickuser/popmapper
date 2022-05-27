@@ -1,6 +1,6 @@
 Package: popmapper
 Title: Experimental R package
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person(given = "Hiroshi C.",
            family = "Ito",
@@ -16,4 +16,5 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: 
     foreach,	
-    pracma
+    pracma,
+    pforeach
