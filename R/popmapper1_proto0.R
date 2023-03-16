@@ -2469,6 +2469,25 @@ return(dist2);
 
 
 
+boot_tree <- function(tab){
+    pop_label=0;
+        dist0=calc_dist(tab,amp_euc=1,amp_bin=1,flag_binary=2,flag_pforeach=1)$dist;
+    ids1=data$ids1;       
+    idsu=unique(ids1);    
+    dist0u=sum_ind_wise(dist0,idsu);
+    dist2=dist0u;
+        ##ids2=idsu;
+        if(pop_label==1){
+            colnames(dist2)=si$PopID[si$omit==0];
+            rownames(dist2)=si$PopID[si$omit==0];
+            }else{
+                colnames(dist2)=data$sample_names2;
+                rownames(dist2)=data$sample_names2;
+            }
+        tr=nj(dist2);
+    
+return(tr);
+}
 
 #' @export
 calc_boot <- function(tab00,nsamp=100){
