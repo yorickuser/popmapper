@@ -10,7 +10,7 @@
   perm = 0,
   resp = NULL,
   main = NULL,
-  label_gid = FALSE
+  labels = FALSE
 )
 }
 \description{
