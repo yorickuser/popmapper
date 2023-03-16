@@ -1186,23 +1186,24 @@ cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=
             return(c(dm0,pv,dij00))
      }
 
+#' @export
 get_inde <- function(i,j,cid1,rec,nni,nnj,flag_welch_t_test=0){
-      lisi=which(cid1==i);
-      lisj=which(cid1==j);
-                        
-      ppi=rec[lisi,];
-      ppj=rec[lisj,];
-      
-     ppi=rec[lisi,];
-     ppj=rec[lisj,];
-     
-                            ma=(cov(ppi)*(nni-1)+cov(ppj)*(nnj-1))/(nni+nnj-2);
-                    
-                            ev=solve(ma)%*%(apply(ppi,2,mean)-apply(ppj,2,mean));
-                            ev=ev/sqrt(ev[1]^2+ev[2]^2);
-
-                            pi=ppi[,1]*ev[1]+ppi[,2]*ev[2];
-                            pj=ppj[,1]*ev[1]+ppj[,2]*ev[2];
+    lisi=which(cid1==i);
+    lisj=which(cid1==j);
+    
+    ppi=rec[lisi,];
+    ppj=rec[lisj,];
+    
+    ppi=rec[lisi,];
+    ppj=rec[lisj,];
+    
+    ma=(cov(ppi)*(nni-1)+cov(ppj)*(nnj-1))/(nni+nnj-2);
+    
+    ev=solve(ma)%*%(apply(ppi,2,mean)-apply(ppj,2,mean));
+    ev=ev/sqrt(ev[1]^2+ev[2]^2);
+    
+    pi=ppi[,1]*ev[1]+ppi[,2]*ev[2];
+    pj=ppj[,1]*ev[1]+ppj[,2]*ev[2];
                             
                             sdi=sd(pi);
                             sdj=sd(pj);
