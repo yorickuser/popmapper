@@ -1220,8 +1220,8 @@ get_inde <- function(i,j,cid1,rec,nni,nnj,flag_welch_t_test=0){
 
 ##' @title plot.popmap". 
 #' @export
-plot.popmap <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL,label_gid=FALSE){
-    popmap.plot(popmap,param=param,perm=perm,resp=resp,main=main,label_gid=label_gid);
+plot.popmap <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL,labels=FALSE){
+    popmap.plot(popmap,param=param,perm=perm,resp=resp,main=main,labels=labels);
 }
 
 ##' @title popmap.plot". 
