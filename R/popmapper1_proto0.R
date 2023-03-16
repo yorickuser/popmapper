@@ -2468,7 +2468,7 @@ return(dist2);
 }
 
 
-
+#' @export
 boot_tree <- function(tab){
     pop_label=0;
         dist0=calc_dist(tab,amp_euc=1,amp_bin=1,flag_binary=2,flag_pforeach=1)$dist;
