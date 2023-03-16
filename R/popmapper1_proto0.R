@@ -1134,7 +1134,7 @@ cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=
                     
                     for(m in 1:npf){                        
                         lisr=order(rns1[,m]);                      
-                        indes1[m]=get_inde(i,j,cid[lisr],rec,nni,nnj,flag_welch_t_test=flag_welch_t_test);
+                        indes1[m]=popmapper::get_inde(i,j,cid[lisr],rec,nni,nnj,flag_welch_t_test=flag_welch_t_test);
                     }
                     indes1;
                 
@@ -1153,7 +1153,7 @@ cmdist_unit <- function(k, ilis,jlis,dist2p,cid_sm,test=FALSE,flag_welch_t_test=
                     
                     for(m in 1:npf){                        
                         lisr=order(rns1[,m]);                      
-                        indes1[m]=get_inde(i,j,cid[lisr],rec,nni,nnj,flag_welch_t_test=flag_welch_t_test);
+                        indes1[m]=popmapper::get_inde(i,j,cid[lisr],rec,nni,nnj,flag_welch_t_test=flag_welch_t_test);
                     }
                     indes1;
                 
