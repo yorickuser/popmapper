@@ -1879,7 +1879,7 @@ popmap.out <- function(ofile,amp_euc,amp_bin,omit_popid){
 #####################################################################
 #####################################################################
 
-subdiv_edge_size <<- 4;
+
 #' @export
 popmap.out.gdis <- function(map,ofile,amp_euc=1,amp_bin=1,omit_popid=NULL){
     if(length(omit_popid)>0){
@@ -1997,7 +1997,7 @@ subdata <- function(data,map,tagcid){
 
 
 #' @export
-popmap.find.sub <- function(data,map,param=param0,sample_group_name="gid"){
+popmap.find.sub <- function(data,map,param=param0,sample_group_name="gid",subdiv_edge_size =4){
     if(flag_envs).ee.append("popmap.find.sub",environment());
     cid=map$cid_sm;
     ngroup=map$ngroup;
