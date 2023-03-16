@@ -1218,9 +1218,9 @@ get_inde <- function(i,j,cid1,rec,nni,nnj,flag_welch_t_test=0){
                             return (inde1);
    }
 
-##' @title plot.popmap". 
+##' @title plot_popmap". 
 #' @export
-plot.popmap <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL,labels=FALSE){
+plot_popmap <- function(popmap,param=param0,perm=0,resp=NULL,main=NULL,labels=FALSE){
     popmap.plot(popmap,param=param,perm=perm,resp=resp,main=main,labels=labels);
 }
 
@@ -2111,7 +2111,7 @@ popmap.subdiv <- function(data,map,param=param0,noprint=FALSE){
     if(length(data$sample.info)==0)data$sample.info=map$sample.info;
     
     dev.set(2);
-    ##plot.text(map);
+    ##plot_text(map);
     popmap.plot(map,peak=F,param=param);
     maps.sub=popmap.find.sub(data,map,param=param);
     maps.rec=popmap.find.subrec(maps.sub,param=param);
@@ -2290,7 +2290,7 @@ get.submap <- function(maps.all, gid=NULL,depth=NULL,noprint=FALSE,data=NULL){
 }
 
 #' @export
-plot.sub <- function(maps.all,gid=NULL,depth=NULL,labels="popid", main=NULL,noprint=FALSE,power=FALSE,peak=FALSE,main_add=TRUE,param=param0){
+plot_sub <- function(maps.all,gid=NULL,depth=NULL,labels="popid", main=NULL,noprint=FALSE,power=FALSE,peak=FALSE,main_add=TRUE,param=param0){
     if(length(depth)==0){
             depth_name="NULL";
     }else{
@@ -2307,7 +2307,7 @@ plot.sub <- function(maps.all,gid=NULL,depth=NULL,labels="popid", main=NULL,nopr
     
     if(power==FALSE){
         map.all=get.submap(maps.all,gid=gid,depth=depth,noprint=noprint);
-        plot.text(map.all,labels=labels,main=main);
+        plot_text(map.all,labels=labels,main=main);
     }else{
         maps.t=get.submaps(maps.all,gid=gid);
         map.all=maps.t[[1]];
@@ -2360,7 +2360,7 @@ gid2sub <- function(map.all){
 
 
 
-plot.text <- function(map,labels=map$popids2,main="Subdivided-grouping map"){
+plot_text <- function(map,labels=map$popids2,main="Subdivided-grouping map"){
 
     par(mar=c(5,5,5,6));
     par(xpd=T);
@@ -2401,7 +2401,7 @@ plot.text <- function(map,labels=map$popids2,main="Subdivided-grouping map"){
 }
 
 
-plot.mask <- function(data,labels=data$popids2,mask=(data$ids2>0),col="red",cex=0.7){
+plot_mask <- function(data,labels=data$popids2,mask=(data$ids2>0),col="red",cex=0.7){
 
     map=maps[[1]];tagid=2;mask=(map$cid_sm==tagid);
     labels=map$popids2[mask];
@@ -2468,26 +2468,7 @@ return(dist2);
 }
 
 
-pop_label <<- 0;
-#' @export
-boot_tree <- function(tab){
-        dist0=calc_dist(tab,amp_euc=1,amp_bin=1,flag_binary=2,flag_pforeach=1)$dist;
-    ids1=data$ids1;       
-    idsu=unique(ids1);    
-    dist0u=sum_ind_wise(dist0,idsu);
-    dist2=dist0u;
-        ##ids2=idsu;
-        if(pop_label==1){
-            colnames(dist2)=si$PopID[si$omit==0];
-            rownames(dist2)=si$PopID[si$omit==0];
-            }else{
-                colnames(dist2)=data$sample_names2;
-                rownames(dist2)=data$sample_names2;
-            }
-        tr=nj(dist2);
-    
-return(tr);
-}
+
 
 #' @export
 calc_boot <- function(tab00,nsamp=100){
@@ -2511,9 +2492,8 @@ calc_boot <- function(tab00,nsamp=100){
 
 
 #' @export
-plot.btree1 <- function(btree,map.all,ccid=map.all$cid_sm,p_boot=0.95,power=0.5,type="u",cex_boot=0.5,cex=1.0,ecol="white",fg="white",bg="black",outgroup=NULL,sample_names=NULL){
-    ##if(flag_envs).ee.append("plot.btree1",environment());    
-
+plot_btree1 <- function(btree,map.all,ccid=map.all$cid_sm,p_boot=0.95,power=0.5,type="u",cex_boot=0.5,cex=1.0,ecol="white",fg="white",bg="black",outgroup=NULL,sample_names=NULL){
+    ##if(flag_envs).ee.append("plot_btree1",environment());    
    
     btree1=btree;
 
