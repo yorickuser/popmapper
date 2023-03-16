@@ -1953,7 +1953,7 @@ popmap.out.dev <- function(devid,ofile,amp_euc,amp_bin,omit_popid,density=700,ge
 ##source("~/migseq/popmapper/popmapper0i_test4c_try_check.R");
 ##.ess.source('~/migseq/hirano_marimo_2021_08_04-2022_08_17/popmapper_all_marimo_utree_subdivide_nth_marimo.R', visibly = FALSE, output = TRUE)
 
-max_depth <<- 0;
+
 
 #' @export
 subdata <- function(data,map,tagcid){
@@ -2074,14 +2074,17 @@ popmap.find.subs <- function(maps.sub,param=param0,sample_group_name="gid"){
 
 
 popmap.find.subrec <- function(maps.sub,param=param0,depth=1,sample_group_name="gid"){
-    if(flag_envs).ee.append("popmap.find.subrec",environment());    
+    if(flag_envs).ee.append("popmap.find.subrec",environment());
+
+    max_depth = 0;
+    
     maps.sub2=popmap.find.subs(maps.sub,param=param,sample_group_name=sample_group_name);
     for(i in 1:length(maps.sub2)){
         not_none= (length(grep("none",names(maps.sub2)[i]))==0);
         not_merge= (length(grep("merge",names(maps.sub2)[i]))==0);
         if(not_none&&not_merge){
             cat("depth:",depth,"\n");
-            if(max_depth < depth)max_depth <<- depth;
+            if(max_depth < depth)max_depth = depth;
             print(paste("max depth:",max_depth));
             
             maps.sub3=popmap.find.subrec(maps.sub2[[i]]$maps.sub,param=param,depth=depth+1,sample_group_name=paste0(sample_group_name,":",i));
